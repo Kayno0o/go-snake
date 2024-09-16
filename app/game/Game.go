@@ -2,7 +2,6 @@ package game
 
 import (
 	"image/color"
-	"math"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -81,18 +80,19 @@ func (g *Game) Move() *Pos {
 func (g *Game) checkDeath(newPos *Pos) {
 	if g.Board.CheckSnake(newPos) {
 		g.State = "lose"
+		g.data.SaveData()
 	}
 }
 
-func (g *Game) checkApple(newPos *Pos) bool {
+func (g *Game) checkApple(newPos *Pos) {
 	if index := g.Board.CheckApple(newPos); index != -1 {
 		g.Score++
 
 		g.Board.MoveApple(index)
-		return true
+		return
 	}
 
-	return false
+	g.Board.snake = g.Board.snake[1:]
 }
 
 func (g *Game) Play() {
@@ -101,10 +101,7 @@ func (g *Game) Play() {
 		return
 	}
 
-	if !g.checkApple(newPos) {
-		g.Board.snake = g.Board.snake[1:]
-	}
-
+	g.checkApple(newPos)
 	g.checkDeath(newPos)
 }
 
@@ -118,8 +115,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if g.State == "play" {
 		g.Board.Draw(screen)
 
+		g.data.HighScore = utils.Max(g.data.HighScore, g.Score)
+
 		utils.DrawText(screen, 6, 8, 16, "     Score:"+strconv.FormatInt(int64(g.Score), 10), bgColor)
-		utils.DrawText(screen, 6, 30, 16, "High Score:"+strconv.FormatInt(int64(math.Max(float64(g.data.HighScore), float64(g.Score))), 10), bgColor)
+		utils.DrawText(screen, 6, 30, 16, "High Score:"+strconv.FormatInt(int64(g.data.HighScore), 10), bgColor)
 	}
 }
 
